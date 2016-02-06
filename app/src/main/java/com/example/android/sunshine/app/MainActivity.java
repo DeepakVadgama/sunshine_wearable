@@ -35,6 +35,7 @@ import com.example.android.sunshine.app.gcm.RegistrationIntentService;
 import com.example.android.sunshine.app.sync.SunshineSyncAdapter;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 public class MainActivity extends AppCompatActivity implements ForecastFragment.Callback {
 
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
 
     private boolean mTwoPane;
     private String mLocation;
+    private GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
         Uri contentUri = getIntent() != null ? getIntent().getData() : null;
 
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
@@ -81,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
             getSupportActionBar().setElevation(0f);
         }
 
-        ForecastFragment forecastFragment =  ((ForecastFragment)getSupportFragmentManager()
+        ForecastFragment forecastFragment = ((ForecastFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.fragment_forecast));
         forecastFragment.setUseTodayLayout(!mTwoPane);
         if (contentUri != null) {
@@ -91,11 +93,20 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
 
         SunshineSyncAdapter.initializeSyncAdapter(this);
 
+//        mGoogleApiClient = new GoogleApiClient.Builder(MainActivity.this)
+//                .addApi(Wearable.API)
+//                .addConnectionCallbacks(MainActivity.this)
+//                .addOnConnectionFailedListener(MainActivity.this)
+//                .build();
+//        mGoogleApiClient.connect();
+
         // If Google Play Services is up to date, we'll want to register GCM. If it is not, we'll
         // skip the registration and this device will not receive any downstream messages from
         // our fake server. Because weather alerts are not a core feature of the app, this should
         // not affect the behavior of the app, from a user perspective.
         if (checkPlayServices()) {
+
+
             // Because this is the initial creation of the app, we'll want to be certain we have
             // a token. If we do not, then we will start the IntentService that will register this
             // application with GCM.
@@ -135,15 +146,15 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
     @Override
     protected void onResume() {
         super.onResume();
-        String location = Utility.getPreferredLocation( this );
+        String location = Utility.getPreferredLocation(this);
         // update the location in our second pane using the fragment manager
-            if (location != null && !location.equals(mLocation)) {
-            ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
-            if ( null != ff ) {
+        if (location != null && !location.equals(mLocation)) {
+            ForecastFragment ff = (ForecastFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
+            if (null != ff) {
                 ff.onLocationChanged();
             }
-            DetailFragment df = (DetailFragment)getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENT_TAG);
-            if ( null != df ) {
+            DetailFragment df = (DetailFragment) getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENT_TAG);
+            if (null != df) {
                 df.onLocationChanged(location);
             }
             mLocation = location;
@@ -196,4 +207,51 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
         }
         return true;
     }
+//
+//    private void sendDataToWearable(Cursor cursor) {
+//
+//        if (cursor == null) {
+//            Log.i(LOG_TAG, "Cursor is null, probably not initialized yet");
+//            return;
+//        }
+//
+//        PutDataMapRequest requestMap = PutDataMapRequest.create("/weather-data");
+//
+//        requestMap.getDataMap().putString("max_temp", Utility.formatTemperature(MainActivity.this, cursor.getDouble(DetailFragment.COL_WEATHER_MAX_TEMP)));
+//        requestMap.getDataMap().putString("min_temp", Utility.formatTemperature(MainActivity.this, cursor.getDouble(DetailFragment.COL_WEATHER_MIN_TEMP)));
+//        requestMap.getDataMap().putInt("weather_image_id", cursor.getInt(DetailFragment.COL_WEATHER_CONDITION_ID));
+//
+//        PutDataRequest request = requestMap.asPutDataRequest();
+//        Wearable.DataApi.putDataItem(mGoogleApiClient, request).setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+//            @Override
+//            public void onResult(DataApi.DataItemResult dataItemResult) {
+//                if (dataItemResult.getStatus().isSuccess()) {
+//                    Log.i(LOG_TAG, "Data sent successfully to Wearable");
+//                } else {
+//                    Log.i(LOG_TAG, "Error in sending data to Wearable");
+//                }
+//            }
+//        });
+//        cursor.close();
+//
+//    }
+//
+//    @Override
+//    public void onConnected(Bundle bundle) {
+//        String location = Utility.getPreferredLocation(MainActivity.this);
+//        Uri weatherLocation = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(location, System.currentTimeMillis());
+//        String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+//        Cursor cursor = new CursorLoader(MainActivity.this, weatherLocation, DetailFragment.DETAIL_COLUMNS, null, null, sortOrder).loadInBackground();
+//        sendDataToWearable(cursor);
+//    }
+//
+//    @Override
+//    public void onConnectionSuspended(int i) {
+//        Log.i(LOG_TAG, "Wearable connection suspended");
+//    }
+//
+//    @Override
+//    public void onConnectionFailed(ConnectionResult connectionResult) {
+//        Log.i(LOG_TAG, "Connection failed with Wearable");
+//    }
 }
